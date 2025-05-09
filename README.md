@@ -10,5 +10,17 @@
 # CMake:
   Using the cmake to load core using dll to test logs and "hello world".
 
+# run cmd:
+```
+retroarch.exe --verbose -L cores/hello_world_core.dll
+```
+
+# load core:
+```
+helloworld_core.dll
+```
+If there no Start Core button once the core is loaded.
+
+
 # Credits:
- * 
+ * Grok 3.0
