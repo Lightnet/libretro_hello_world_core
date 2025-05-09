@@ -13,12 +13,15 @@
 static retro_environment_t environ_cb;
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
-static uint16_t framebuffer[WIDTH * HEIGHT]; // Fixed RGB565
+static retro_input_poll_t input_poll_cb;
+static retro_input_state_t input_state_cb;
+static uint16_t framebuffer[WIDTH * HEIGHT]; // RGB565
 static bool initialized = false;
-static bool pixel_format_set = false;
 static bool contentless_set = false;
 static int env_call_count = 0;
 static FILE *log_file = NULL;
+static int square_x = 0;
+static int square_y = 0; // For optional up/down movement
 
 // File-based logging (simple)
 static void fallback_log(const char *level, const char *msg) {
@@ -59,10 +62,10 @@ static void fallback_log_format(const char *level, const char *fmt, ...) {
 
 // Clear framebuffer to black
 static void clear_framebuffer() {
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Clearing framebuffer");
-   else
-      fallback_log("DEBUG", "Clearing framebuffer");
+  //  if (log_cb)
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Clearing framebuffer");
+  //  else
+  //     fallback_log("DEBUG", "Clearing framebuffer");
    memset(framebuffer, 0, WIDTH * HEIGHT * sizeof(uint16_t));
 }
 
@@ -91,10 +94,10 @@ static void draw_char(int x, int y, char c, uint16_t color) {
 
 // Draw a string at (x, y) in RGB565 color
 static void draw_string(int x, int y, const char *str, uint16_t color) {
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Drawing string: %s at (%d, %d)", str, x, y);
-   else
-      fallback_log_format("DEBUG", "Drawing string: %s at (%d, %d)", str, x, y);
+  //  if (log_cb)
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Drawing string: %s at (%d, %d)", str, x, y);
+  //  else
+  //     fallback_log_format("DEBUG", "Drawing string: %s at (%d, %d)", str, x, y);
    int cx = x;
    for (size_t i = 0; str[i]; i++) {
       draw_char(cx, y, str[i], color);
@@ -120,7 +123,7 @@ void retro_set_environment(retro_environment_t cb) {
    else
       fallback_log_format("DEBUG", "retro_set_environment called (count: %d)", env_call_count);
 
-   // Set content-less support (only once)
+   // Set content-less support
    if (!contentless_set) {
       bool contentless = true;
       if (environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &contentless)) {
@@ -136,36 +139,6 @@ void retro_set_environment(retro_environment_t cb) {
             fallback_log("ERROR", "Failed to set content-less support");
       }
    }
-
-   // Set up logging (only if not already set)
-   if (!log_cb) {
-      struct retro_log_callback logging;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) {
-         log_cb = logging.log;
-         if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[DEBUG] Logging callback initialized");
-      } else {
-         log_cb = NULL;
-         fallback_log("WARN", "Failed to get log interface");
-      }
-   }
-
-   // Set pixel format to RGB565 (only once)
-   if (!pixel_format_set) {
-      enum retro_pixel_format format = RETRO_PIXEL_FORMAT_RGB565;
-      if (environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &format)) {
-         pixel_format_set = true;
-         if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[DEBUG] Pixel format set: RGB565");
-         else
-            fallback_log("DEBUG", "Pixel format set: RGB565");
-      } else {
-         if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set pixel format: RGB565");
-         else
-            fallback_log("ERROR", "Failed to set pixel format: RGB565");
-      }
-   }
 }
 
 // Called by the frontend to set video refresh callback
@@ -177,9 +150,24 @@ void retro_set_video_refresh(retro_video_refresh_t cb) {
       fallback_log("DEBUG", "Video refresh callback set");
 }
 
+// Input callbacks
+void retro_set_input_poll(retro_input_poll_t cb) {
+   input_poll_cb = cb;
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Input poll callback set");
+   else
+      fallback_log("DEBUG", "Input poll callback set");
+}
+
+void retro_set_input_state(retro_input_state_t cb) {
+   input_state_cb = cb;
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Input state callback set");
+   else
+      fallback_log("DEBUG", "Input state callback set");
+}
+
 // Stubbed callbacks
-void retro_set_input_poll(retro_input_poll_t cb) { (void)cb; }
-void retro_set_input_state(retro_input_state_t cb) { (void)cb; }
 void retro_set_audio_sample(retro_audio_sample_t cb) { (void)cb; }
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { (void)cb; }
 
@@ -191,6 +179,35 @@ void retro_init(void) {
    else
       fallback_log("DEBUG", "Hello World core initialized");
    clear_framebuffer();
+
+   // Set pixel format to RGB565
+   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+   if (environ_cb && environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
+      if (log_cb)
+         log_cb(RETRO_LOG_INFO, "[DEBUG] Pixel format set: RGB565");
+      else
+         fallback_log("DEBUG", "Pixel format set: RGB565");
+   } else {
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set pixel format: RGB565");
+      else
+         fallback_log("ERROR", "Failed to set pixel format: RGB565");
+      if (environ_cb)
+         environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+   }
+
+   // Set up logging
+   struct retro_log_callback logging;
+   if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) {
+      log_cb = logging.log;
+      if (log_cb)
+         log_cb(RETRO_LOG_INFO, "[DEBUG] Logging callback initialized");
+   } else {
+      if (log_cb)
+         log_cb(RETRO_LOG_WARN, "[WARN] Failed to get log interface");
+      else
+         fallback_log("WARN", "Failed to get log interface");
+   }
 }
 
 // Called when the core is deinitialized
@@ -200,9 +217,10 @@ void retro_deinit(void) {
       log_file = NULL;
    }
    initialized = false;
-   pixel_format_set = false;
    contentless_set = false;
    env_call_count = 0;
+   square_x = 0;
+   square_y = 0;
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "[DEBUG] Core deinitialized");
    else
@@ -254,6 +272,8 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
 // Called to reset the core
 void retro_reset(void) {
    clear_framebuffer();
+   square_x = 0;
+   square_y = 0;
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "[DEBUG] Core reset");
    else
@@ -269,28 +289,57 @@ void retro_run(void) {
          fallback_log("ERROR", "Core not initialized in retro_run");
       return;
    }
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Running frame");
-   else
-      fallback_log("DEBUG", "Running frame");
+  //  if (log_cb)
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Running frame (GUI or CLI)");
+  //  else
+  //     fallback_log("DEBUG", "Running frame (GUI or CLI)");
    clear_framebuffer();
 
-   // Test: Draw a 20x20 red square at (0, 0)
+   // Handle input
+   if (input_poll_cb)
+      input_poll_cb();
+   if (input_state_cb) {
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
+         square_x += 1;
+         if (square_x > WIDTH - 20) square_x = WIDTH - 20;
+      }
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) {
+         square_x -= 1;
+         if (square_x < 0) square_x = 0;
+      }
+      // Enable for up/down movement
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
+         square_y += 1;
+         if (square_y > HEIGHT - 20) square_y = HEIGHT - 20;
+      }
+      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) {
+         square_y -= 1;
+         if (square_y < 0) square_y = 0;
+      }
+      
+   }
+
+   // Draw a 20x20 red square at (square_x, square_y)
    for (int y = 0; y < 20; y++) {
       for (int x = 0; x < 20; x++) {
-         framebuffer[y * WIDTH + x] = COLOR_RED;
+         if (square_x + x < WIDTH && square_y + y < HEIGHT)
+            framebuffer[(y + square_y) * WIDTH + (x + square_x)] = COLOR_RED;
       }
    }
+  //  if (log_cb)
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Drawing red square at (%d, %d)", square_x, square_y);
+  //  else
+  //     fallback_log_format("DEBUG", "Drawing red square at (%d, %d)", square_x, square_y);
 
    // Draw "Hello World" at (50, 50)
    draw_string(50, 50, "Hello World", COLOR_WHITE);
 
    if (video_cb) {
       video_cb(framebuffer, WIDTH, HEIGHT, WIDTH * sizeof(uint16_t));
-      if (log_cb)
-         log_cb(RETRO_LOG_INFO, "[DEBUG] Framebuffer sent to video_cb");
-      else
-         fallback_log("DEBUG", "Framebuffer sent to video_cb");
+      // if (log_cb)
+      //    log_cb(RETRO_LOG_INFO, "[DEBUG] Framebuffer sent to video_cb");
+      // else
+      //    fallback_log("DEBUG", "Framebuffer sent to video_cb");
    } else {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "[ERROR] No video callback set");
@@ -303,14 +352,14 @@ void retro_run(void) {
 bool retro_load_game(const struct retro_game_info *game) {
    (void)game;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Game loaded (content-less): Displaying Hello World");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Game loaded (content-less): Displaying Hello World (GUI or CLI)");
    else
-      fallback_log("DEBUG", "Game loaded (content-less): Displaying Hello World");
+      fallback_log("DEBUG", "Game loaded (content-less): Displaying Hello World (GUI or CLI)");
    clear_framebuffer();
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game completed");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game completed (GUI or CLI)");
    else
-      fallback_log("DEBUG", "retro_load_game completed");
+      fallback_log("DEBUG", "retro_load_game completed (GUI or CLI)");
    return true;
 }
 

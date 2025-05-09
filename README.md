@@ -19,7 +19,7 @@ retroarch.exe --verbose -L cores/hello_world_core.dll
 ```
 helloworld_core.dll
 ```
-If there no Start Core button once the core is loaded.
+If there should be Start Core button once the core is loaded.
 
 
 # Credits:
