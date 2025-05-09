@@ -106,11 +106,11 @@ The Libretro team provides a sample core repository that includes the Hello Worl
 bash
 
 ```bash
-git clone https://github.com/libretro/libretro-samples.git
-cd libretro-samples/hello-world
+git clone https://github.com/Lightnet/libretro_hello_world_core.git
+cd libretro_hello_world_core
 ```
 
-The hello-world directory contains the source code for the Hello World core (libretro.c).
+The hello-world directory contains the source code for the Hello World core (hello_world_core.c).
 
 Step 2: Understand the Core Code
 
@@ -261,10 +261,10 @@ Step 4: Test the Core in RetroArch
 
 1. Install RetroArch:
     - Download and install RetroArch from https://www.retroarch.com/.
-    - Default installation path (as per your log): D:\download\softwares\RetroArch-Win64.
+    - Default installation path (as per your log): ...\RetroArch-Win64.
         
 2. Place the Core:
-    - Copy hello_world_core.dll to the cores directory (e.g., D:\download\softwares\RetroArch-Win64\cores).
+    - Copy hello_world_core.dll to the cores directory (e.g., ...\RetroArch-Win64\cores).
         
 3. Run the Core:
     - Launch RetroArch.
