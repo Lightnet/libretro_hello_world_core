@@ -25,6 +25,13 @@ If there should be Start Core button once the core is loaded.
 
 # Credits:
  * Grok 3.0
+ * https://nnarain.github.io/2017/07/13/GameboyCore-as-a-libretro-core!.html
+ * https://bitbucket.org/Themaister/libretro-gl/src/master/
+ * https://github.com/nnarain/gameboycore-retro
+ * https://github.com/libretro/libretro-samples
+ * https://www.libretro.com/index.php/making-of-craft-core/
+ * https://github.com/libretro/Craft/blob/master/libretro/libretro.c
+ * https://github.com/RobLoach/libretro-dolphin-launcher/tree/master
 
 # Libretro Core API Documentation: Creating a "Hello World" Core
 
