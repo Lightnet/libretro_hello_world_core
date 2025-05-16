@@ -13,11 +13,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(libretro-common)
 
 # Define the shared library
-add_library(hello_world_core SHARED src/lib.c src/font.h)
+add_library(hello_world_core SHARED src/lib.c)
 
 # Set include directories
 target_include_directories(hello_world_core PRIVATE
     ${libretro-common_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Set compile definitions
