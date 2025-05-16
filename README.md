@@ -124,7 +124,6 @@ Step 2: Understand the Core Code
 Below is a simplified version of the Hello World core’s code (libretro.c), with comments explaining each part.
 
 c
-
 ```c
 #include <libretro.h>
 #include <string.h>

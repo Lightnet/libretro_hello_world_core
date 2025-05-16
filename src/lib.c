@@ -21,7 +21,11 @@ static bool contentless_set = false;
 static int env_call_count = 0;
 static FILE *log_file = NULL;
 static int square_x = 0;
-static int square_y = 0; // For optional up/down movement
+static int square_y = 0;
+
+// Colors (RGB565)
+#define COLOR_WHITE 0xFFFF // White
+#define COLOR_RED   0xF800 // Red
 
 // File-based logging (simple)
 static void fallback_log(const char *level, const char *msg) {
@@ -63,19 +67,19 @@ static void fallback_log_format(const char *level, const char *fmt, ...) {
 // Clear framebuffer to black
 static void clear_framebuffer() {
   //  if (log_cb)
-  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Clearing framebuffer");
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Clearing framebuffer\n");
   //  else
-  //     fallback_log("DEBUG", "Clearing framebuffer");
-   memset(framebuffer, 0, WIDTH * HEIGHT * sizeof(uint16_t));
+  //     fallback_log("DEBUG", "Clearing framebuffer\n");
+  memset(framebuffer, 0, WIDTH * HEIGHT * sizeof(uint16_t));
 }
 
 // Draw a single 8x8 character at (x, y) in RGB565 color
 static void draw_char(int x, int y, char c, uint16_t color) {
    if (c < 32 || c > 126) {
       if (log_cb)
-         log_cb(RETRO_LOG_WARN, "[DEBUG] Invalid character: %c", c);
+         log_cb(RETRO_LOG_WARN, "[DEBUG] Invalid character: %c\n", c);
       else
-         fallback_log_format("WARN", "Invalid character: %c", c);
+         fallback_log_format("WARN", "Invalid character: %c\n", c);
       return;
    }
    const uint8_t *glyph = font_8x8[c - 32];
@@ -105,23 +109,19 @@ static void draw_string(int x, int y, const char *str, uint16_t color) {
    }
 }
 
-// Colors (RGB565)
-#define COLOR_WHITE 0xFFFF // White
-#define COLOR_RED   0xF800 // Red
-
 // Called by the frontend to set environment callbacks
 void retro_set_environment(retro_environment_t cb) {
    environ_cb = cb;
    env_call_count++;
    if (!cb) {
-      fallback_log("ERROR", "retro_set_environment: Null environment callback");
+      fallback_log("ERROR", "retro_set_environment: Null environment callback\n");
       return;
    }
 
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_set_environment called (count: %d)", env_call_count);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_set_environment called (count: %d)\n", env_call_count);
    else
-      fallback_log_format("DEBUG", "retro_set_environment called (count: %d)", env_call_count);
+      fallback_log_format("DEBUG", "retro_set_environment called (count: %d)\n", env_call_count);
 
    // Set content-less support
    if (!contentless_set) {
@@ -129,14 +129,14 @@ void retro_set_environment(retro_environment_t cb) {
       if (environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &contentless)) {
          contentless_set = true;
          if (log_cb)
-            log_cb(RETRO_LOG_INFO, "[DEBUG] Content-less support enabled");
+            log_cb(RETRO_LOG_INFO, "[DEBUG] Content-less support enabled\n");
          else
-            fallback_log("DEBUG", "Content-less support enabled");
+            fallback_log("DEBUG", "Content-less support enabled\n");
       } else {
          if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set content-less support");
+            log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set content-less support\n");
          else
-            fallback_log("ERROR", "Failed to set content-less support");
+            fallback_log("ERROR", "Failed to set content-less support\n");
       }
    }
 }
@@ -145,26 +145,26 @@ void retro_set_environment(retro_environment_t cb) {
 void retro_set_video_refresh(retro_video_refresh_t cb) {
    video_cb = cb;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Video refresh callback set");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Video refresh callback set\n");
    else
-      fallback_log("DEBUG", "Video refresh callback set");
+      fallback_log("DEBUG", "Video refresh callback set\n");
 }
 
 // Input callbacks
 void retro_set_input_poll(retro_input_poll_t cb) {
    input_poll_cb = cb;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Input poll callback set");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Input poll callback set\n");
    else
-      fallback_log("DEBUG", "Input poll callback set");
+      fallback_log("DEBUG", "Input poll callback set\n");
 }
 
 void retro_set_input_state(retro_input_state_t cb) {
    input_state_cb = cb;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Input state callback set");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Input state callback set\n");
    else
-      fallback_log("DEBUG", "Input state callback set");
+      fallback_log("DEBUG", "Input state callback set\n");
 }
 
 // Stubbed callbacks
@@ -175,23 +175,23 @@ void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { (void)cb; }
 void retro_init(void) {
    initialized = true;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Hello World core initialized");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Hello World core initialized\n");
    else
-      fallback_log("DEBUG", "Hello World core initialized");
+      fallback_log("DEBUG", "Hello World core initialized\n");
    clear_framebuffer();
 
    // Set pixel format to RGB565
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
    if (environ_cb && environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
       if (log_cb)
-         log_cb(RETRO_LOG_INFO, "[DEBUG] Pixel format set: RGB565");
+         log_cb(RETRO_LOG_INFO, "[DEBUG] Pixel format set: RGB565\n");
       else
-         fallback_log("DEBUG", "Pixel format set: RGB565");
+         fallback_log("DEBUG", "Pixel format set: RGB565\n");
    } else {
       if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set pixel format: RGB565");
+         log_cb(RETRO_LOG_ERROR, "[ERROR] Failed to set pixel format: RGB565\n");
       else
-         fallback_log("ERROR", "Failed to set pixel format: RGB565");
+         fallback_log("ERROR", "Failed to set pixel format: RGB565\n");
       if (environ_cb)
          environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
    }
@@ -201,12 +201,12 @@ void retro_init(void) {
    if (environ_cb && environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) {
       log_cb = logging.log;
       if (log_cb)
-         log_cb(RETRO_LOG_INFO, "[DEBUG] Logging callback initialized");
+         log_cb(RETRO_LOG_INFO, "[DEBUG] Logging callback initialized\n");
    } else {
       if (log_cb)
-         log_cb(RETRO_LOG_WARN, "[WARN] Failed to get log interface");
+         log_cb(RETRO_LOG_WARN, "[WARN] Failed to get log interface\n");
       else
-         fallback_log("WARN", "Failed to get log interface");
+         fallback_log("WARN", "Failed to get log interface\n");
    }
 }
 
@@ -222,24 +222,24 @@ void retro_deinit(void) {
    square_x = 0;
    square_y = 0;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Core deinitialized");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Core deinitialized\n");
    else
-      fallback_log("DEBUG", "Core deinitialized");
+      fallback_log("DEBUG", "Core deinitialized\n");
 }
 
 // Called to get system information
 void retro_get_system_info(struct retro_system_info *info) {
    memset(info, 0, sizeof(*info));
-   info->library_name = "Hello World Core";
+   info->library_name = "Libretro Core Hello World";
    info->library_version = "1.0";
    info->need_fullpath = false;
    info->block_extract = false;
    info->valid_extensions = "";
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] System info: %s v%s, need_fullpath=%d",
+      log_cb(RETRO_LOG_INFO, "[DEBUG] System info: %s v%s, need_fullpath=%d\n",
              info->library_name, info->library_version, info->need_fullpath);
    else
-      fallback_log_format("DEBUG", "System info: %s v%s, need_fullpath=%d",
+      fallback_log_format("DEBUG", "System info: %s v%s, need_fullpath=%d\n",
                          info->library_name, info->library_version, info->need_fullpath);
 }
 
@@ -254,9 +254,9 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
    info->timing.fps = 60.0;
    info->timing.sample_rate = 48000.0;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] AV info: %dx%d, %.2f fps", WIDTH, HEIGHT, info->timing.fps);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] AV info: %dx%d, %.2f fps\n", WIDTH, HEIGHT, info->timing.fps);
    else
-      fallback_log_format("DEBUG", "AV info: %dx%d, %.2f fps", WIDTH, HEIGHT, info->timing.fps);
+      fallback_log_format("DEBUG", "AV info: %dx%d, %.2f fps\n", WIDTH, HEIGHT, info->timing.fps);
 }
 
 // Called when the core is loaded
@@ -264,9 +264,9 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
    (void)port;
    (void)device;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Controller port device set: port=%u, device=%u", port, device);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Controller port device set: port=%u, device=%u\n", port, device);
    else
-      fallback_log_format("DEBUG", "Controller port device set: port=%u, device=%u", port, device);
+      fallback_log_format("DEBUG", "Controller port device set: port=%u, device=%u\n", port, device);
 }
 
 // Called to reset the core
@@ -275,24 +275,21 @@ void retro_reset(void) {
    square_x = 0;
    square_y = 0;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Core reset");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Core reset\n");
    else
-      fallback_log("DEBUG", "Core reset");
+      fallback_log("DEBUG", "Core reset\n");
 }
 
 // Called every frame
 void retro_run(void) {
    if (!initialized) {
       if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "[ERROR] Core not initialized in retro_run");
+         log_cb(RETRO_LOG_ERROR, "[ERROR] Core not initialized in retro_run\n");
       else
-         fallback_log("ERROR", "Core not initialized in retro_run");
+         fallback_log("ERROR", "Core not initialized in retro_run\n");
       return;
    }
-  //  if (log_cb)
-  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Running frame (GUI or CLI)");
-  //  else
-  //     fallback_log("DEBUG", "Running frame (GUI or CLI)");
+
    clear_framebuffer();
 
    // Handle input
@@ -316,7 +313,6 @@ void retro_run(void) {
          square_y -= 1;
          if (square_y < 0) square_y = 0;
       }
-      
    }
 
    // Draw a 20x20 red square at (square_x, square_y)
@@ -327,9 +323,9 @@ void retro_run(void) {
       }
    }
   //  if (log_cb)
-  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Drawing red square at (%d, %d)", square_x, square_y);
+  //     log_cb(RETRO_LOG_INFO, "[DEBUG] Drawing red square at (%d, %d)\n", square_x, square_y);
   //  else
-  //     fallback_log_format("DEBUG", "Drawing red square at (%d, %d)", square_x, square_y);
+  //     fallback_log_format("DEBUG", "Drawing red square at (%d, %d)\n", square_x, square_y);
 
    // Draw "Hello World" at (50, 50)
    draw_string(50, 50, "Hello World", COLOR_WHITE);
@@ -337,14 +333,14 @@ void retro_run(void) {
    if (video_cb) {
       video_cb(framebuffer, WIDTH, HEIGHT, WIDTH * sizeof(uint16_t));
       // if (log_cb)
-      //    log_cb(RETRO_LOG_INFO, "[DEBUG] Framebuffer sent to video_cb");
+      //    log_cb(RETRO_LOG_INFO, "[DEBUG] Framebuffer sent to video_cb\n");
       // else
-      //    fallback_log("DEBUG", "Framebuffer sent to video_cb");
+      //    fallback_log("DEBUG", "Framebuffer sent to video_cb\n");
    } else {
       if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "[ERROR] No video callback set");
+         log_cb(RETRO_LOG_ERROR, "[ERROR] No video callback set\n");
       else
-         fallback_log("ERROR", "No video callback set");
+         fallback_log("ERROR", "No video callback set\n");
    }
 }
 
@@ -352,14 +348,14 @@ void retro_run(void) {
 bool retro_load_game(const struct retro_game_info *game) {
    (void)game;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Game loaded (content-less): Displaying Hello World (GUI or CLI)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Game loaded (content-less): Displaying Hello World\n");
    else
-      fallback_log("DEBUG", "Game loaded (content-less): Displaying Hello World (GUI or CLI)");
+      fallback_log("DEBUG", "Game loaded (content-less): Displaying Hello World \n");
    clear_framebuffer();
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game completed (GUI or CLI)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game completed\n");
    else
-      fallback_log("DEBUG", "retro_load_game completed (GUI or CLI)");
+      fallback_log("DEBUG", "retro_load_game completed\n");
    return true;
 }
 
@@ -369,88 +365,88 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
    (void)info;
    (void)num_info;
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game_special called (stubbed)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] retro_load_game_special called (stubbed)\n");
    else
-      fallback_log("DEBUG", "retro_load_game_special called (stubbed)");
+      fallback_log("DEBUG", "retro_load_game_special called (stubbed)\n");
    return false; // Not supported
 }
 
 // Called to unload a game
 void retro_unload_game(void) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Game unloaded");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Game unloaded\n");
    else
-      fallback_log("DEBUG", "Game unloaded");
+      fallback_log("DEBUG", "Game unloaded\n");
 }
 
 // Called to get region
 unsigned retro_get_region(void) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Region: NTSC");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Region: NTSC\n");
    else
-      fallback_log("DEBUG", "Region: NTSC");
+      fallback_log("DEBUG", "Region: NTSC\n");
    return RETRO_REGION_NTSC;
 }
 
 // Stubbed serialization functions
 bool retro_serialize(void *data, size_t size) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Serialize called (stubbed)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Serialize called (stubbed)\n");
    else
-      fallback_log("DEBUG", "Serialize called (stubbed)");
+      fallback_log("DEBUG", "Serialize called (stubbed)\n");
    (void)data; (void)size; return false;
 }
 bool retro_unserialize(const void *data, size_t size) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Unserialize called (stubbed)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Unserialize called (stubbed)\n");
    else
-      fallback_log("DEBUG", "Unserialize called (stubbed)");
+      fallback_log("DEBUG", "Unserialize called (stubbed)\n");
    (void)data; (void)size; return false;
 }
 size_t retro_serialize_size(void) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Serialize size: 0");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Serialize size: 0\n");
    else
-      fallback_log("DEBUG", "Serialize size: 0");
+      fallback_log("DEBUG", "Serialize size: 0\n");
    return 0;
 }
 
 // Stubbed cheat functions
 void retro_cheat_reset(void) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Cheat reset (stubbed)");
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Cheat reset (stubbed)\n");
    else
-      fallback_log("DEBUG", "Cheat reset (stubbed)");
+      fallback_log("DEBUG", "Cheat reset (stubbed)\n");
 }
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Cheat set: index=%u, enabled=%d, code=%s (stubbed)", index, enabled, code);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Cheat set: index=%u, enabled=%d, code=%s (stubbed)\n", index, enabled, code);
    else
-      fallback_log_format("DEBUG", "Cheat set: index=%u, enabled=%d, code=%s (stubbed)", index, enabled, code);
+      fallback_log_format("DEBUG", "Cheat set: index=%u, enabled=%d, code=%s (stubbed)\n", index, enabled, code);
    (void)index; (void)enabled; (void)code;
 }
 
 // Stubbed memory functions
 void *retro_get_memory_data(unsigned id) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Memory data: id=%u (stubbed)", id);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Memory data: id=%u (stubbed)\n", id);
    else
-      fallback_log_format("DEBUG", "Memory data: id=%u (stubbed)", id);
+      fallback_log_format("DEBUG", "Memory data: id=%u (stubbed)\n", id);
    (void)id; return NULL;
 }
 size_t retro_get_memory_size(unsigned id) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] Memory size: id=%u (stubbed)", id);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] Memory size: id=%u (stubbed)\n", id);
    else
-      fallback_log_format("DEBUG", "Memory size: id=%u (stubbed)", id);
+      fallback_log_format("DEBUG", "Memory size: id=%u (stubbed)\n", id);
    (void)id; return 0;
 }
 
 // Called to get API version
 unsigned retro_api_version(void) {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[DEBUG] API version: %u", RETRO_API_VERSION);
+      log_cb(RETRO_LOG_INFO, "[DEBUG] API version: %u\n", RETRO_API_VERSION);
    else
-      fallback_log_format("DEBUG", "API version: %u", RETRO_API_VERSION);
+      fallback_log_format("DEBUG", "API version: %u\n", RETRO_API_VERSION);
    return RETRO_API_VERSION;
 }
